@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📓 Bloc de Notas - Laboratorio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <header>
+            <h1>📓 Bloc de Notas</h1>
+            <p class="subtitulo">Apuntes de laboratorio - Electrónica</p>
+        </header>
+
+        <!-- Panel de control -->
+        <div class="panel">
+            <button id="btnNuevo" onclick="nuevoApunte()">➕ Nuevo</button>
+            <button id="btnSincronizar" onclick="sincronizarDrive()">☁️ Sincronizar</button>
+            <button id="btnExportar" onclick="exportarTXT()">📤 Exportar TXT</button>
+        </div>
+
+        <!-- Área de edición -->
+        <div class="editor">
+            <input type="text" id="titulo" placeholder="Título del apunte..." />
+            <textarea id="contenido" placeholder="Escribe tus apuntes aquí..."></textarea>
+            <button onclick="guardarApunte()" id="btnGuardar">💾 Guardar</button>
+        </div>
+
+        <!-- Lista de apuntes guardados -->
+        <div class="lista">
+            <h3>📚 Mis Apuntes</h3>
+            <ul id="listaApuntes"></ul>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
