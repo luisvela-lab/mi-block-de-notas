@@ -3,7 +3,6 @@
 // ============================================================
 
 // ---------- CONFIGURACIÓN ----------
-// CLIENT ID CORRECTO (el de Google Cloud)
 const CLIENT_ID = '437507188017-48fi07056vend5a6u3uk2h937gtimmg0.apps.googleusercontent.com';
 
 // ---------- VARIABLES GLOBALES ----------
@@ -16,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarApuntes();
     mostrarApuntes();
     configurarBotonSincronizar();
+    // Deshabilitar botón eliminar al inicio
+    document.getElementById('btnEliminar').disabled = true;
 });
 
 // ---------- CONFIGURAR BOTÓN ----------
@@ -39,7 +40,6 @@ function manejarSincronizacion() {
     btn.textContent = '⏳ Conectando...';
     btn.disabled = true;
 
-    // Inicializar la nueva librería de Google
     if (typeof window.google !== 'undefined' && window.google.accounts) {
         window.google.accounts.id.initialize({
             client_id: CLIENT_ID,
@@ -147,6 +147,7 @@ function cargarApunte(index) {
     apunteEditando = index;
     document.getElementById('btnGuardar').textContent = '✏️ Actualizar';
     document.getElementById('btnGuardar').style.background = '#1f6feb';
+    document.getElementById('btnEliminar').disabled = false;
 }
 
 // ---------- GUARDAR APUNTE ----------
@@ -164,6 +165,7 @@ function guardarApunte() {
         apunteEditando = null;
         document.getElementById('btnGuardar').textContent = '💾 Guardar';
         document.getElementById('btnGuardar').style.background = '#238636';
+        document.getElementById('btnEliminar').disabled = true;
     } else {
         const nuevoApunte = {
             id: Date.now(),
@@ -188,7 +190,68 @@ function nuevoApunte() {
     apunteEditando = null;
     document.getElementById('btnGuardar').textContent = '💾 Guardar';
     document.getElementById('btnGuardar').style.background = '#238636';
+    document.getElementById('btnEliminar').disabled = true;
     document.getElementById('titulo').focus();
+}
+
+// ---------- ELIMINAR APUNTE ----------
+function eliminarApunte() {
+    if (apunteEditando === null) {
+        alert('⚠️ Selecciona una nota para eliminar.');
+        return;
+    }
+
+    const titulo = apuntes[apunteEditando].titulo || 'Sin título';
+    const confirmacion = confirm(`¿Estás seguro de que quieres eliminar la nota "${titulo}"?\n\nEsta acción no se puede deshacer.`);
+    
+    if (!confirmacion) return;
+
+    // Eliminar la nota del array
+    apuntes.splice(apunteEditando, 1);
+    guardarApuntes();
+    mostrarApuntes();
+    
+    // Limpiar el editor
+    document.getElementById('titulo').value = '';
+    document.getElementById('contenido').value = '';
+    apunteEditando = null;
+    document.getElementById('btnGuardar').textContent = '💾 Guardar';
+    document.getElementById('btnGuardar').style.background = '#238636';
+    document.getElementById('btnEliminar').disabled = true;
+    
+    alert('✅ Nota eliminada correctamente.');
+}
+
+// ---------- LIMPIAR TODO ----------
+function limpiarTodo() {
+    if (apuntes.length === 0) {
+        alert('📭 No hay apuntes para eliminar.');
+        return;
+    }
+
+    const confirmacion = confirm(`⚠️ ¿Estás seguro de que quieres ELIMINAR TODAS las notas?\n\n${apuntes.length} notas serán eliminadas.\n\nEsta acción no se puede deshacer.`);
+    
+    if (!confirmacion) return;
+
+    // Segunda confirmación para mayor seguridad
+    const confirmacion2 = confirm('🔴 ¿REALMENTE quieres eliminar TODAS tus notas?\n\nEsta acción es irreversible.');
+    
+    if (!confirmacion2) return;
+
+    // Eliminar todas las notas
+    apuntes = [];
+    guardarApuntes();
+    mostrarApuntes();
+    
+    // Limpiar el editor
+    document.getElementById('titulo').value = '';
+    document.getElementById('contenido').value = '';
+    apunteEditando = null;
+    document.getElementById('btnGuardar').textContent = '💾 Guardar';
+    document.getElementById('btnGuardar').style.background = '#238636';
+    document.getElementById('btnEliminar').disabled = true;
+    
+    alert('🧹 Todas las notas han sido eliminadas.');
 }
 
 // ---------- EXPORTAR A TXT ----------
@@ -260,9 +323,7 @@ async function sincronizarDrive() {
 async function buscarArchivoEnDrive() {
     const response = await fetch(
         'https://www.googleapis.com/drive/v3/files?q=name=%27apuntes_backup.json%27%20and%20trashed=false&spaces=drive&fields=files(id,name,modifiedTime)',
-        {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        }
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
     const data = await response.json();
     return data.files || [];
@@ -341,6 +402,11 @@ document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         guardarApunte();
+    }
+    // Atajo: Delete o Suprimir para eliminar nota seleccionada
+    if ((e.key === 'Delete' || e.key === 'Supr') && apunteEditando !== null) {
+        e.preventDefault();
+        eliminarApunte();
     }
 });
 
