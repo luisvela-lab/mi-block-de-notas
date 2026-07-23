@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarApuntes();
     mostrarApuntes();
     configurarBotonSincronizar();
-    // Deshabilitar botón eliminar al inicio
     document.getElementById('btnEliminar').disabled = true;
 });
 
@@ -206,12 +205,10 @@ function eliminarApunte() {
     
     if (!confirmacion) return;
 
-    // Eliminar la nota del array
     apuntes.splice(apunteEditando, 1);
     guardarApuntes();
     mostrarApuntes();
     
-    // Limpiar el editor
     document.getElementById('titulo').value = '';
     document.getElementById('contenido').value = '';
     apunteEditando = null;
@@ -233,17 +230,14 @@ function limpiarTodo() {
     
     if (!confirmacion) return;
 
-    // Segunda confirmación para mayor seguridad
     const confirmacion2 = confirm('🔴 ¿REALMENTE quieres eliminar TODAS tus notas?\n\nEsta acción es irreversible.');
     
     if (!confirmacion2) return;
 
-    // Eliminar todas las notas
     apuntes = [];
     guardarApuntes();
     mostrarApuntes();
     
-    // Limpiar el editor
     document.getElementById('titulo').value = '';
     document.getElementById('contenido').value = '';
     apunteEditando = null;
@@ -403,7 +397,6 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         guardarApunte();
     }
-    // Atajo: Delete o Suprimir para eliminar nota seleccionada
     if ((e.key === 'Delete' || e.key === 'Supr') && apunteEditando !== null) {
         e.preventDefault();
         eliminarApunte();
