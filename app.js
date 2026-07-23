@@ -1,16 +1,77 @@
 // ============================================================
-// Bloc de Notas - App principal
+// BLOC DE NOTAS - CON SINCRONIZACIÓN CON GOOGLE DRIVE
 // ============================================================
+
+// ---------- CONFIGURACIÓN ----------
+// ¡TU CLIENT ID DE GOOGLE! (El que copiaste de Google Cloud)
+const CLIENT_ID = '437507188017-48fi07056vend5a6u3uk2h937gtimmg0.apps.googleusercontent.com';
 
 // ---------- VARIABLES GLOBALES ----------
 let apuntes = [];
-let apunteEditando = null; // índice del apunte que se está editando
+let apunteEditando = null;
+let usuarioLogueado = false;
 
 // ---------- INICIALIZAR ----------
 document.addEventListener('DOMContentLoaded', () => {
     cargarApuntes();
     mostrarApuntes();
+    cargarLibreriaGoogle();
 });
+
+// ---------- CARGAR LIBRERÍA DE GOOGLE ----------
+function cargarLibreriaGoogle() {
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+        gapi.load('client:auth2', iniciarGAPI);
+    };
+    script.onerror = () => {
+        console.error('Error al cargar la librería de Google');
+        document.getElementById('btnSincronizar').textContent = '⚠️ Error de conexión';
+    };
+    document.head.appendChild(script);
+}
+
+function iniciarGAPI() {
+    gapi.client.init({
+        clientId: CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+    }).then(() => {
+        const auth = gapi.auth2.getAuthInstance();
+        if (auth.isSignedIn.get()) {
+            usuarioLogueado = true;
+            document.getElementById('btnSincronizar').textContent = '☁️ Sincronizar ✅';
+        } else {
+            document.getElementById('btnSincronizar').textContent = '🔑 Conectar con Google';
+        }
+        // El botón de sincronizar ahora hace login o sincroniza
+        document.getElementById('btnSincronizar').onclick = manejarSincronizacion;
+    }).catch(err => {
+        console.error('Error al iniciar GAPI:', err);
+        document.getElementById('btnSincronizar').textContent = '⚠️ Error de conexión';
+    });
+}
+
+// ---------- MANEJAR SINCRONIZACIÓN (Login + Sincronizar) ----------
+function manejarSincronizacion() {
+    const auth = gapi.auth2.getAuthInstance();
+    
+    if (!auth.isSignedIn.get()) {
+        // Si no está logueado, hacer login
+        auth.signIn().then(() => {
+            usuarioLogueado = true;
+            document.getElementById('btnSincronizar').textContent = '☁️ Sincronizar ✅';
+            sincronizarDrive();
+        }).catch(err => {
+            alert('❌ No se pudo iniciar sesión. Intenta de nuevo.');
+            console.error(err);
+        });
+    } else {
+        // Si ya está logueado, sincronizar
+        sincronizarDrive();
+    }
+}
 
 // ---------- FUNCIONES DE ALMACENAMIENTO LOCAL ----------
 function cargarApuntes() {
@@ -18,15 +79,12 @@ function cargarApuntes() {
     if (datos) {
         apuntes = JSON.parse(datos);
     } else {
-        // Apuntes de ejemplo
-        apuntes = [
-            {
-                id: Date.now(),
-                titulo: '📌 Bienvenido a tu bloc',
-                contenido: 'Este es tu bloc de notas para el laboratorio.\n\nEscribe tus apuntes, mediciones y ocurrencias aquí.\n\n¡Todo se guarda automáticamente en tu navegador!',
-                fecha: new Date().toISOString()
-            }
-        ];
+        apuntes = [{
+            id: Date.now(),
+            titulo: '📌 Bienvenido a tu bloc',
+            contenido: 'Este es tu bloc de notas para el laboratorio.\n\nEscribe tus apuntes, mediciones y ocurrencias aquí.\n\n¡Todo se guarda automáticamente en tu navegador!\n\nPara sincronizar entre dispositivos, presiona "Conectar con Google" y luego "Sincronizar".',
+            fecha: new Date().toISOString()
+        }];
         guardarApuntes();
     }
 }
@@ -43,9 +101,7 @@ function mostrarApuntes() {
         return;
     }
 
-    // Mostrar del más reciente al más antiguo
     const apuntesOrdenados = [...apuntes].reverse();
-    
     lista.innerHTML = apuntesOrdenados.map((apunte, index) => {
         const fecha = new Date(apunte.fecha);
         const fechaStr = fecha.toLocaleDateString('es-ES', { 
@@ -53,8 +109,7 @@ function mostrarApuntes() {
             hour: '2-digit', minute: '2-digit'
         });
         const preview = apunte.contenido.substring(0, 60) + (apunte.contenido.length > 60 ? '...' : '');
-        const idxOriginal = apuntes.length - 1 - index; // índice real en el array original
-        
+        const idxOriginal = apuntes.length - 1 - index;
         return `
             <li onclick="cargarApunte(${idxOriginal})">
                 <span class="titulo-lista">${apunte.titulo || 'Sin título'}</span>
@@ -69,28 +124,22 @@ function mostrarApuntes() {
 function cargarApunte(index) {
     const apunte = apuntes[index];
     if (!apunte) return;
-    
     document.getElementById('titulo').value = apunte.titulo || '';
     document.getElementById('contenido').value = apunte.contenido || '';
     apunteEditando = index;
-    
-    // Cambiar texto del botón
     document.getElementById('btnGuardar').textContent = '✏️ Actualizar';
     document.getElementById('btnGuardar').style.background = '#1f6feb';
 }
 
-// ---------- GUARDAR APUNTE (NUEVO O ACTUALIZAR) ----------
+// ---------- GUARDAR APUNTE ----------
 function guardarApunte() {
     const titulo = document.getElementById('titulo').value.trim();
     const contenido = document.getElementById('contenido').value.trim();
-    
     if (!titulo && !contenido) {
         alert('⚠️ Escribe algo antes de guardar.');
         return;
     }
-    
     if (apunteEditando !== null) {
-        // Actualizar apunte existente
         apuntes[apunteEditando].titulo = titulo || 'Sin título';
         apuntes[apunteEditando].contenido = contenido;
         apuntes[apunteEditando].fecha = new Date().toISOString();
@@ -98,7 +147,6 @@ function guardarApunte() {
         document.getElementById('btnGuardar').textContent = '💾 Guardar';
         document.getElementById('btnGuardar').style.background = '#238636';
     } else {
-        // Crear nuevo apunte
         const nuevoApunte = {
             id: Date.now(),
             titulo: titulo || 'Sin título',
@@ -107,23 +155,15 @@ function guardarApunte() {
         };
         apuntes.push(nuevoApunte);
     }
-    
     guardarApuntes();
     mostrarApuntes();
-    
-    // Limpiar campos
     document.getElementById('titulo').value = '';
     document.getElementById('contenido').value = '';
-    
-    // Feedback
     const btn = document.getElementById('btnGuardar');
     btn.textContent = '✅ Guardado';
-    setTimeout(() => {
-        btn.textContent = '💾 Guardar';
-    }, 1500);
+    setTimeout(() => btn.textContent = '💾 Guardar', 1500);
 }
 
-// ---------- NUEVO APUNTE ----------
 function nuevoApunte() {
     document.getElementById('titulo').value = '';
     document.getElementById('contenido').value = '';
@@ -139,10 +179,8 @@ function exportarTXT() {
         alert('📭 No hay apuntes para exportar.');
         return;
     }
-    
-    let texto = '📓 BLOG DE NOTAS - LABORATORIO\n';
+    let texto = '📓 BLOC DE NOTAS - LABORATORIO\n';
     texto += '='.repeat(50) + '\n\n';
-    
     apuntes.forEach((apunte, i) => {
         const fecha = new Date(apunte.fecha);
         texto += `📌 ${i+1}. ${apunte.titulo}\n`;
@@ -150,8 +188,6 @@ function exportarTXT() {
         texto += `${apunte.contenido}\n`;
         texto += '-'.repeat(40) + '\n\n';
     });
-    
-    // Descargar archivo
     const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -163,23 +199,116 @@ function exportarTXT() {
     URL.revokeObjectURL(url);
 }
 
-// ---------- SINCRONIZACIÓN CON GOOGLE DRIVE (PASO 2) ----------
-function sincronizarDrive() {
-    // Por ahora, solo un mensaje
-    alert('⏳ Función de sincronización en desarrollo.\n\nTus apuntes están guardados localmente en este dispositivo.');
-    
-    // TODO: Implementar API de Google Drive en la siguiente fase
-    // 1. Autenticar con Google
-    // 2. Subir archivo JSON a Drive
-    // 3. Descargar y fusionar apuntes
+// ---------- SINCRONIZACIÓN CON GOOGLE DRIVE ----------
+async function sincronizarDrive() {
+    if (!usuarioLogueado) {
+        alert('🔑 Primero inicia sesión con Google.');
+        return;
+    }
+
+    const btn = document.getElementById('btnSincronizar');
+    const textoOriginal = btn.textContent;
+    btn.textContent = '⏳ Sincronizando...';
+    btn.disabled = true;
+
+    try {
+        // 1. Buscar archivo de respaldo en Drive
+        const archivos = await buscarArchivoEnDrive();
+        let apuntesDrive = [];
+        
+        if (archivos.length > 0) {
+            const contenido = await descargarArchivoDrive(archivos[0].id);
+            apuntesDrive = JSON.parse(contenido);
+        }
+
+        // 2. Fusionar apuntes locales con los de Drive
+        const apuntesFusionados = fusionarApuntes(apuntes, apuntesDrive);
+        apuntes = apuntesFusionados;
+        guardarApuntes();
+        mostrarApuntes();
+
+        // 3. Subir la versión fusionada a Drive
+        await subirArchivoDrive(apuntes);
+        
+        alert(`✅ ¡Sincronización completada!\n📚 ${apuntes.length} apuntes en total.`);
+        
+    } catch (error) {
+        console.error('Error en sincronización:', error);
+        alert('❌ Error al sincronizar. Revisa que tengas conexión a internet.');
+    } finally {
+        btn.textContent = textoOriginal;
+        btn.disabled = false;
+    }
 }
 
-// ---------- DETECCIÓN DE CIERRE (Guardado automático) ----------
-window.addEventListener('beforeunload', () => {
-    guardarApuntes();
-});
+// ---------- FUNCIONES DE DRIVE ----------
+function buscarArchivoEnDrive() {
+    return gapi.client.drive.files.list({
+        q: "name='apuntes_backup.json' and trashed=false",
+        spaces: 'drive',
+        fields: 'files(id, name, modifiedTime)'
+    }).then(response => response.result.files || []);
+}
 
-// ---------- ATAJO DE TECLADO: Ctrl+Enter para guardar ----------
+function descargarArchivoDrive(fileId) {
+    return gapi.client.drive.files.get({
+        fileId: fileId,
+        alt: 'media'
+    }).then(response => response.body);
+}
+
+function subirArchivoDrive(apuntesData) {
+    const jsonStr = JSON.stringify(apuntesData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    
+    return buscarArchivoEnDrive().then(archivos => {
+        const metadata = {
+            name: 'apuntes_backup.json',
+            mimeType: 'application/json'
+        };
+        
+        const formData = new FormData();
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('file', blob);
+
+        if (archivos.length > 0) {
+            // Actualizar archivo existente
+            return gapi.client.request({
+                path: `/upload/drive/v3/files/${archivos[0].id}`,
+                method: 'PATCH',
+                params: { uploadType: 'multipart' },
+                body: formData
+            });
+        } else {
+            // Crear archivo nuevo
+            return gapi.client.request({
+                path: '/upload/drive/v3/files',
+                method: 'POST',
+                params: { uploadType: 'multipart' },
+                body: formData
+            });
+        }
+    });
+}
+
+// ---------- FUSIONAR APUNTES ----------
+function fusionarApuntes(locales, remotos) {
+    if (!remotos || remotos.length === 0) return locales;
+    
+    const mapa = new Map();
+    locales.forEach(a => mapa.set(a.id, a));
+    remotos.forEach(a => {
+        if (!mapa.has(a.id)) {
+            mapa.set(a.id, a);
+        }
+    });
+    
+    return Array.from(mapa.values()).sort((a, b) => 
+        new Date(a.fecha) - new Date(b.fecha)
+    );
+}
+
+// ---------- ATAJOS Y GUARDADO ----------
 document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -187,5 +316,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-console.log('📓 Bloc de Notas cargado correctamente');
-console.log(`📚 ${apuntes.length} apuntes en total`);
+window.addEventListener('beforeunload', () => guardarApuntes());
+
+console.log('📓 Bloc de Notas con Drive listo!');
+console.log(`📚 ${apuntes.length} apuntes cargados`);
+console.log(`🔑 Client ID: ${CLIENT_ID.substring(0, 20)}...`);
