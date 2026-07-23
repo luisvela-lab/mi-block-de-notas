@@ -4,7 +4,7 @@
 
 // ---------- CONFIGURACIÓN ----------
 // CLIENT ID CORRECTO (el de Google Cloud)
-const CLIENT_ID = '437507188017-48f07056vends6a6u3uk2h937gtimm9o.apps.googleusercontent.com';
+const CLIENT_ID = '437507188017-48fi07056vend5a6u3uk2h937gtimmg0.apps.googleusercontent.com';
 
 // ---------- VARIABLES GLOBALES ----------
 let apuntes = [];
