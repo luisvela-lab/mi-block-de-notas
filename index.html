@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     
     <!-- ===== NUEVA LIBRERÍA DE GOOGLE (IMPORTANTE) ===== -->
-   <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="container">
@@ -23,13 +23,17 @@
             <button id="btnNuevo" onclick="nuevoApunte()">➕ Nuevo</button>
             <button id="btnSincronizar" onclick="sincronizarDrive()">☁️ Sincronizar</button>
             <button id="btnExportar" onclick="exportarTXT()">📤 Exportar TXT</button>
+            <button id="btnLimpiar" onclick="limpiarTodo()" style="background:#da3633; color:white;">🧹 Limpiar todo</button>
         </div>
 
         <!-- Área de edición -->
         <div class="editor">
             <input type="text" id="titulo" placeholder="Título del apunte..." />
             <textarea id="contenido" placeholder="Escribe tus apuntes aquí..."></textarea>
-            <button onclick="guardarApunte()" id="btnGuardar">💾 Guardar</button>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button onclick="guardarApunte()" id="btnGuardar" style="flex:1;">💾 Guardar</button>
+                <button onclick="eliminarApunte()" id="btnEliminar" style="flex:0.5; background:#da3633; color:white;">🗑️ Eliminar</button>
+            </div>
         </div>
 
         <!-- Lista de apuntes guardados -->
