@@ -2,7 +2,7 @@
     "name": "Bloc de Notas - Laboratorio",
     "short_name": "Bloc Notas",
     "description": "Bloc de notas para apuntes de laboratorio - funciona offline",
-    "start_url": "/mi-bloque-de-notas/",
+    "start_url": "/mi-block-de-notas/"
     "display": "standalone",
     "background_color": "#0d1117",
     "theme_color": "#58a6ff",
