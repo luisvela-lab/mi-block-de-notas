@@ -199,3 +199,63 @@ header h1 {
         font-size: 1.6em;
     }
 }
+/* Estilos para el botón eliminar */
+#btnEliminar {
+    background: #da3633 !important;
+    color: white !important;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#btnEliminar:hover {
+    background: #f85149 !important;
+}
+
+#btnEliminar:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Estilo para el botón Limpiar todo */
+#btnLimpiar {
+    background: #da3633 !important;
+    color: white !important;
+}
+
+#btnLimpiar:hover {
+    background: #f85149 !important;
+}
+
+/* Estilo para la confirmación */
+.confirmacion-eliminar {
+    background: #0d1117;
+    border: 2px solid #da3633;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.confirmacion-eliminar button {
+    margin: 0 10px;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.confirmacion-eliminar .btn-si {
+    background: #da3633;
+    color: white;
+}
+
+.confirmacion-eliminar .btn-no {
+    background: #30363d;
+    color: white;
+}
