@@ -3,8 +3,8 @@
 // ============================================================
 
 // ---------- CONFIGURACIÓN ----------
-// ¡TU CLIENT ID DE GOOGLE! (El que copiaste de Google Cloud)
-const CLIENT_ID = '437507188017-48fi07056vend5a6u3uk2h937gtimmg0.apps.googleusercontent.com';
+// CLIENT ID CORRECTO (el de Google Cloud)
+const CLIENT_ID = '437507188017-48f07056vends6a6u3uk2h937gtimm9o.apps.googleusercontent.com';
 
 // ---------- VARIABLES GLOBALES ----------
 let apuntes = [];
@@ -45,7 +45,6 @@ function iniciarGAPI() {
         } else {
             document.getElementById('btnSincronizar').textContent = '🔑 Conectar con Google';
         }
-        // El botón de sincronizar ahora hace login o sincroniza
         document.getElementById('btnSincronizar').onclick = manejarSincronizacion;
     }).catch(err => {
         console.error('Error al iniciar GAPI:', err);
@@ -53,12 +52,11 @@ function iniciarGAPI() {
     });
 }
 
-// ---------- MANEJAR SINCRONIZACIÓN (Login + Sincronizar) ----------
+// ---------- MANEJAR SINCRONIZACIÓN ----------
 function manejarSincronizacion() {
     const auth = gapi.auth2.getAuthInstance();
     
     if (!auth.isSignedIn.get()) {
-        // Si no está logueado, hacer login
         auth.signIn().then(() => {
             usuarioLogueado = true;
             document.getElementById('btnSincronizar').textContent = '☁️ Sincronizar ✅';
@@ -68,7 +66,6 @@ function manejarSincronizacion() {
             console.error(err);
         });
     } else {
-        // Si ya está logueado, sincronizar
         sincronizarDrive();
     }
 }
@@ -212,7 +209,6 @@ async function sincronizarDrive() {
     btn.disabled = true;
 
     try {
-        // 1. Buscar archivo de respaldo en Drive
         const archivos = await buscarArchivoEnDrive();
         let apuntesDrive = [];
         
@@ -221,13 +217,11 @@ async function sincronizarDrive() {
             apuntesDrive = JSON.parse(contenido);
         }
 
-        // 2. Fusionar apuntes locales con los de Drive
         const apuntesFusionados = fusionarApuntes(apuntes, apuntesDrive);
         apuntes = apuntesFusionados;
         guardarApuntes();
         mostrarApuntes();
 
-        // 3. Subir la versión fusionada a Drive
         await subirArchivoDrive(apuntes);
         
         alert(`✅ ¡Sincronización completada!\n📚 ${apuntes.length} apuntes en total.`);
@@ -272,7 +266,6 @@ function subirArchivoDrive(apuntesData) {
         formData.append('file', blob);
 
         if (archivos.length > 0) {
-            // Actualizar archivo existente
             return gapi.client.request({
                 path: `/upload/drive/v3/files/${archivos[0].id}`,
                 method: 'PATCH',
@@ -280,7 +273,6 @@ function subirArchivoDrive(apuntesData) {
                 body: formData
             });
         } else {
-            // Crear archivo nuevo
             return gapi.client.request({
                 path: '/upload/drive/v3/files',
                 method: 'POST',
