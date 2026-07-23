@@ -1,13 +1,12 @@
 const CACHE_NAME = 'bloc-notas-v1';
 const ARCHIVOS = [
-    '/mi-bloque-de-notas/',
-    '/mi-bloque-de-notas/index.html',
-    '/mi-bloque-de-notas/style.css',
-    '/mi-bloque-de-notas/app.js',
-    '/mi-bloque-de-notas/manifest.json'
+    '/mi-block-de-notas/',
+    '/mi-block-de-notas/index.html',
+    '/mi-block-de-notas/style.css',
+    '/mi-block-de-notas/app.js',
+    '/mi-block-de-notas/manifest.json'
 ];
 
-// Instalar Service Worker
 self.addEventListener('install', (e) => {
     e.waitUntil(
         caches.open(CACHE_NAME)
@@ -16,7 +15,6 @@ self.addEventListener('install', (e) => {
     );
 });
 
-// Activar Service Worker
 self.addEventListener('activate', (e) => {
     e.waitUntil(
         caches.keys().then(keys => {
@@ -28,7 +26,6 @@ self.addEventListener('activate', (e) => {
     );
 });
 
-// Interceptar peticiones
 self.addEventListener('fetch', (e) => {
     e.respondWith(
         caches.match(e.request)
