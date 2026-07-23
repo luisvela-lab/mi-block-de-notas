@@ -1,0 +1,201 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #161b22;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 255, 170, 0.1);
+}
+
+header {
+    text-align: center;
+    border-bottom: 2px solid #30363d;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: #58a6ff;
+    font-size: 2.2em;
+}
+
+.subtitulo {
+    color: #8b949e;
+    font-size: 0.9em;
+}
+
+.panel {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.panel button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.95em;
+    min-width: 100px;
+}
+
+#btnNuevo {
+    background: #238636;
+    color: white;
+}
+
+#btnNuevo:hover {
+    background: #2ea043;
+}
+
+#btnSincronizar {
+    background: #1f6feb;
+    color: white;
+}
+
+#btnSincronizar:hover {
+    background: #388bfd;
+}
+
+#btnExportar {
+    background: #9e6a03;
+    color: white;
+}
+
+#btnExportar:hover {
+    background: #bb8009;
+}
+
+.editor {
+    background: #0d1117;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.editor input,
+.editor textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #c9d1d9;
+    font-size: 1em;
+    font-family: inherit;
+}
+
+.editor input:focus,
+.editor textarea:focus {
+    outline: 2px solid #58a6ff;
+    border-color: transparent;
+}
+
+.editor textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+#btnGuardar {
+    background: #238636;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+}
+
+#btnGuardar:hover {
+    background: #2ea043;
+}
+
+.lista {
+    background: #0d1117;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.lista h3 {
+    color: #58a6ff;
+    margin-bottom: 15px;
+}
+
+#listaApuntes {
+    list-style: none;
+    padding: 0;
+}
+
+#listaApuntes li {
+    background: #161b22;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border-left: 4px solid #58a6ff;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#listaApuntes li:hover {
+    background: #1c2128;
+    transform: translateX(5px);
+}
+
+#listaApuntes li .fecha {
+    color: #8b949e;
+    font-size: 0.8em;
+    float: right;
+}
+
+#listaApuntes li .titulo-lista {
+    font-weight: bold;
+    color: #f0f6fc;
+}
+
+#listaApuntes li .preview {
+    color: #8b949e;
+    font-size: 0.9em;
+    display: block;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive para celular */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .panel button {
+        min-width: 80px;
+        font-size: 0.8em;
+        padding: 8px;
+    }
+    
+    header h1 {
+        font-size: 1.6em;
+    }
+}
