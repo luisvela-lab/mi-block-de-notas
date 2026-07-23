@@ -1,73 +1,101 @@
 // ============================================================
 // BLOC DE NOTAS - CON SINCRONIZACIÓN CON GOOGLE DRIVE
+// Usando la nueva librería Google Identity Services (GIS)
 // ============================================================
 
 // ---------- CONFIGURACIÓN ----------
-// CLIENT ID CORRECTO (el de Google Cloud)
 const CLIENT_ID = '437507188017-48f07056vends6a6u3uk2h937gtimm9o.apps.googleusercontent.com';
 
 // ---------- VARIABLES GLOBALES ----------
 let apuntes = [];
 let apunteEditando = null;
-let usuarioLogueado = false;
+let accessToken = null; // Token para acceder a Drive
 
 // ---------- INICIALIZAR ----------
 document.addEventListener('DOMContentLoaded', () => {
     cargarApuntes();
     mostrarApuntes();
-    cargarLibreriaGoogle();
+    configurarBotonSincronizar();
 });
 
-// ---------- CARGAR LIBRERÍA DE GOOGLE ----------
-function cargarLibreriaGoogle() {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => {
-        gapi.load('client:auth2', iniciarGAPI);
-    };
-    script.onerror = () => {
-        console.error('Error al cargar la librería de Google');
-        document.getElementById('btnSincronizar').textContent = '⚠️ Error de conexión';
-    };
-    document.head.appendChild(script);
-}
-
-function iniciarGAPI() {
-    gapi.client.init({
-        clientId: CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-    }).then(() => {
-        const auth = gapi.auth2.getAuthInstance();
-        if (auth.isSignedIn.get()) {
-            usuarioLogueado = true;
-            document.getElementById('btnSincronizar').textContent = '☁️ Sincronizar ✅';
-        } else {
-            document.getElementById('btnSincronizar').textContent = '🔑 Conectar con Google';
-        }
-        document.getElementById('btnSincronizar').onclick = manejarSincronizacion;
-    }).catch(err => {
-        console.error('Error al iniciar GAPI:', err);
-        document.getElementById('btnSincronizar').textContent = '⚠️ Error de conexión';
-    });
-}
-
-// ---------- MANEJAR SINCRONIZACIÓN ----------
-function manejarSincronizacion() {
-    const auth = gapi.auth2.getAuthInstance();
-    
-    if (!auth.isSignedIn.get()) {
-        auth.signIn().then(() => {
-            usuarioLogueado = true;
-            document.getElementById('btnSincronizar').textContent = '☁️ Sincronizar ✅';
-            sincronizarDrive();
-        }).catch(err => {
-            alert('❌ No se pudo iniciar sesión. Intenta de nuevo.');
-            console.error(err);
-        });
-    } else {
-        sincronizarDrive();
+// ---------- CONFIGURAR BOTÓN DE SINCRONIZACIÓN ----------
+function configurarBotonSincronizar() {
+    const btn = document.getElementById('btnSincronizar');
+    if (btn) {
+        btn.textContent = '🔑 Iniciar sesión';
+        btn.onclick = manejarSincronizacion;
     }
+}
+
+// ---------- MANEJAR SINCRONIZACIÓN (Login + Autorización) ----------
+function manejarSincronizacion() {
+    const btn = document.getElementById('btnSincronizar');
+    
+    if (accessToken) {
+        // Si ya tenemos token, sincronizar directamente
+        sincronizarDrive();
+        return;
+    }
+
+    // PASO 1: Login con Google (obtener ID Token)
+    btn.textContent = '⏳ Conectando...';
+    btn.disabled = true;
+
+    // Inicializar el cliente de autenticación
+    window.google?.accounts?.id?.initialize({
+        client_id: CLIENT_ID,
+        callback: handleCredentialResponse,
+        cancel_on_tap_outside: false,
+    });
+
+    // Mostrar el diálogo de One Tap (login rápido)
+    window.google?.accounts?.id?.prompt();
+    
+    // Si One Tap no funciona, mostrar el botón de login alternativo
+    // (La ventana de One Tap aparece automáticamente)
+}
+
+// ---------- MANEJAR RESPUESTA DE LOGIN ----------
+function handleCredentialResponse(response) {
+    if (!response.credential) {
+        alert('❌ No se pudo iniciar sesión.');
+        resetearBoton();
+        return;
+    }
+
+    console.log('✅ Login exitoso. ID Token recibido.');
+    
+    // Ahora que tenemos el ID Token, pedimos autorización para Drive
+    solicitarAutorizacionDrive();
+}
+
+// ---------- SOLICITAR AUTORIZACIÓN PARA DRIVE ----------
+function solicitarAutorizacionDrive() {
+    const btn = document.getElementById('btnSincronizar');
+    btn.textContent = '⏳ Autorizando Drive...';
+    
+    // Usar el nuevo cliente OAuth 2.0 para obtener un token de acceso
+    const tokenClient = window.google?.accounts?.oauth2?.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (tokenResponse) => {
+            if (tokenResponse.error) {
+                console.error('Error de autorización:', tokenResponse.error);
+                alert('❌ No se pudo autorizar el acceso a Drive.');
+                resetearBoton();
+                return;
+            }
+            accessToken = tokenResponse.access_token;
+            console.log('✅ Token de acceso obtenido.');
+            btn.textContent = '☁️ Sincronizar ✅';
+            btn.disabled = false;
+            // Ahora sí, sincronizar
+            sincronizarDrive();
+        },
+    });
+
+    // Solicitar el token (abre ventana emergente)
+    tokenClient.requestAccessToken();
 }
 
 // ---------- FUNCIONES DE ALMACENAMIENTO LOCAL ----------
@@ -79,7 +107,7 @@ function cargarApuntes() {
         apuntes = [{
             id: Date.now(),
             titulo: '📌 Bienvenido a tu bloc',
-            contenido: 'Este es tu bloc de notas para el laboratorio.\n\nEscribe tus apuntes, mediciones y ocurrencias aquí.\n\n¡Todo se guarda automáticamente en tu navegador!\n\nPara sincronizar entre dispositivos, presiona "Conectar con Google" y luego "Sincronizar".',
+            contenido: 'Este es tu bloc de notas para el laboratorio.\n\nEscribe tus apuntes, mediciones y ocurrencias aquí.\n\n¡Todo se guarda automáticamente en tu navegador!\n\nPara sincronizar entre dispositivos, presiona "Iniciar sesión".',
             fecha: new Date().toISOString()
         }];
         guardarApuntes();
@@ -198,8 +226,8 @@ function exportarTXT() {
 
 // ---------- SINCRONIZACIÓN CON GOOGLE DRIVE ----------
 async function sincronizarDrive() {
-    if (!usuarioLogueado) {
-        alert('🔑 Primero inicia sesión con Google.');
+    if (!accessToken) {
+        alert('🔑 Primero inicia sesión y autoriza el acceso a Drive.');
         return;
     }
 
@@ -209,6 +237,7 @@ async function sincronizarDrive() {
     btn.disabled = true;
 
     try {
+        // 1. Buscar archivo de respaldo en Drive (usando fetch con el token)
         const archivos = await buscarArchivoEnDrive();
         let apuntesDrive = [];
         
@@ -217,11 +246,13 @@ async function sincronizarDrive() {
             apuntesDrive = JSON.parse(contenido);
         }
 
+        // 2. Fusionar apuntes locales con los de Drive
         const apuntesFusionados = fusionarApuntes(apuntes, apuntesDrive);
         apuntes = apuntesFusionados;
         guardarApuntes();
         mostrarApuntes();
 
+        // 3. Subir la versión fusionada a Drive
         await subirArchivoDrive(apuntes);
         
         alert(`✅ ¡Sincronización completada!\n📚 ${apuntes.length} apuntes en total.`);
@@ -235,52 +266,83 @@ async function sincronizarDrive() {
     }
 }
 
-// ---------- FUNCIONES DE DRIVE ----------
-function buscarArchivoEnDrive() {
-    return gapi.client.drive.files.list({
-        q: "name='apuntes_backup.json' and trashed=false",
-        spaces: 'drive',
-        fields: 'files(id, name, modifiedTime)'
-    }).then(response => response.result.files || []);
+// ---------- FUNCIONES DE DRIVE (usando fetch con Access Token) ----------
+async function buscarArchivoEnDrive() {
+    const response = await fetch(
+        'https://www.googleapis.com/drive/v3/files?q=name=%27apuntes_backup.json%27%20and%20trashed=false&spaces=drive&fields=files(id,name,modifiedTime)',
+        {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+    );
+    const data = await response.json();
+    return data.files || [];
 }
 
-function descargarArchivoDrive(fileId) {
-    return gapi.client.drive.files.get({
-        fileId: fileId,
-        alt: 'media'
-    }).then(response => response.body);
+async function descargarArchivoDrive(fileId) {
+    const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+    );
+    return await response.text();
 }
 
-function subirArchivoDrive(apuntesData) {
+async function subirArchivoDrive(apuntesData) {
     const jsonStr = JSON.stringify(apuntesData, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     
-    return buscarArchivoEnDrive().then(archivos => {
+    // Buscar si ya existe
+    const archivos = await buscarArchivoEnDrive();
+    
+    if (archivos.length > 0) {
+        // Actualizar archivo existente
+        const fileId = archivos[0].id;
+        const formData = new FormData();
         const metadata = {
             name: 'apuntes_backup.json',
             mimeType: 'application/json'
         };
-        
-        const formData = new FormData();
         formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         formData.append('file', blob);
 
-        if (archivos.length > 0) {
-            return gapi.client.request({
-                path: `/upload/drive/v3/files/${archivos[0].id}`,
+        const response = await fetch(
+            `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
+            {
                 method: 'PATCH',
-                params: { uploadType: 'multipart' },
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                },
                 body: formData
-            });
-        } else {
-            return gapi.client.request({
-                path: '/upload/drive/v3/files',
+            }
+        );
+        return await response.json();
+    } else {
+        // Crear archivo nuevo
+        const formData = new FormData();
+        const metadata = {
+            name: 'apuntes_backup.json',
+            mimeType: 'application/json'
+        };
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('file', blob);
+
+        const response = await fetch(
+            'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+            {
                 method: 'POST',
-                params: { uploadType: 'multipart' },
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                },
                 body: formData
-            });
-        }
-    });
+            }
+        );
+        return await response.json();
+    }
 }
 
 // ---------- FUSIONAR APUNTES ----------
@@ -300,6 +362,15 @@ function fusionarApuntes(locales, remotos) {
     );
 }
 
+// ---------- UTILIDADES ----------
+function resetearBoton() {
+    const btn = document.getElementById('btnSincronizar');
+    if (btn) {
+        btn.textContent = '🔑 Iniciar sesión';
+        btn.disabled = false;
+    }
+}
+
 // ---------- ATAJOS Y GUARDADO ----------
 document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -310,6 +381,4 @@ document.addEventListener('keydown', (e) => {
 
 window.addEventListener('beforeunload', () => guardarApuntes());
 
-console.log('📓 Bloc de Notas con Drive listo!');
-console.log(`📚 ${apuntes.length} apuntes cargados`);
-console.log(`🔑 Client ID: ${CLIENT_ID.substring(0, 20)}...`);
+console.log('📓 Bloc de Notas con nueva librería GIS listo!');
