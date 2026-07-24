@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bloc-notas-v2'; // <--- Cambiado a v2 para forzar la actualización en celulares
+const CACHE_NAME = 'bloc-notas-v3'; // <--- Cambiado a v3 para obligar al celular a renovar el HTML
 const ARCHIVOS = [
     '/mi-block-de-notas/',
     '/mi-block-de-notas/index.html',
