@@ -68,11 +68,16 @@ function manejarSincronizacion() {
     btn.textContent = '⏳ Conectando...';
     btn.disabled = true;
 
+    // Si por caché o retraso no se inicializó al principio, lo intentamos inicializar aquí mismo
+    if (!tokenClient && typeof window.google !== 'undefined' && window.google.accounts?.oauth2) {
+        inicializarGoogleAuth();
+    }
+
     if (tokenClient) {
-        // En móviles, esto abre la ventana nativa interactiva correctamente sin bloquearse
+        // Abre la ventana de inicio de sesión de Google
         tokenClient.requestAccessToken({ prompt: 'consent' });
     } else {
-        alert('❌ La librería de Google no está lista. Revisa tu conexión a internet.');
+        alert('❌ La librería de Google no está lista. Intenta recargar la página con Ctrl + F5.');
         resetearBoton();
     }
 }
