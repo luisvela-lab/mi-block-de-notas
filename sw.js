@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bloc-notas-v1';
+const CACHE_NAME = 'bloc-notas-v2'; // <--- Cambiado a v2 para forzar la actualización en celulares
 const ARCHIVOS = [
     '/mi-block-de-notas/',
     '/mi-block-de-notas/index.html',
@@ -15,6 +15,7 @@ self.addEventListener('install', (e) => {
     );
 });
 
+// Este evento es clave: va a borrar la caché v1 vieja de tu celular automáticamente
 self.addEventListener('activate', (e) => {
     e.waitUntil(
         caches.keys().then(keys => {
@@ -22,7 +23,7 @@ self.addEventListener('activate', (e) => {
                 keys.filter(key => key !== CACHE_NAME)
                     .map(key => caches.delete(key))
             );
-        })
+        }).then(() => self.clients.claim()) // Toma el control de la página inmediatamente
     );
 });
 
